@@ -46,6 +46,11 @@ dev:
 ctags:
 	gotags -tag-relative=true -R=true -sort=true -f=tags -fields=+l .
 
+# Startup test http server
+.PHONY: http
+http:
+	go run ./examples/basic_http.go
+
 #--------------------------------------
 # Testing Rules
 #--------------------------------------
