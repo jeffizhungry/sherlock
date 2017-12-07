@@ -4,18 +4,27 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/jeffizhungry/sherlock/pkg/debug"
 )
 
-// Proxy proxies HTTP requests
-type Proxy struct{}
+// TransparentProxy proxies HTTP requests as a MITM service.
+type TransparentProxy struct{}
 
-func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// NewTransparentProxy creates a new TransparentProxy object.
+func NewTransparentProxy() *TransparentProxy {
+	return &TransparentProxy{}
+}
 
+// ServerHTTP handles proxying HTTP requests
+func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	debug.PPrintln(r)
 }
 
 func main() {
 	fmt.Println("Sherlock starting")
 	defer fmt.Println("Sherlock exiting...")
-	server := &Proxy{}
+
+	server := NewTransparentProxy()
 	log.Fatal(http.ListenAndServe(":9999", server))
 }
