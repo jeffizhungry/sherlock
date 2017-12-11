@@ -49,20 +49,18 @@ func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func copyHTTPRequest(r *http.Request) (*http.Request, error) {
-	bodyData, err := ioutil.ReadAll(r.Body)
+	var copiedBody io.Reader
+	if r.ContentLength > 0 && r.Body != nil {
+		var buf bytes.Buffer
+		copiedBody = io.TeeReader(r.Body, &buf)
+		r.Body = ioutil.NopCloser(&buf)
+	}
+	copied, err := http.NewRequest(r.Method, r.URL.String(), copiedBody)
 	if err != nil {
 		return nil, err
 	}
-	var body io.Reader
-	if len(bodyData) > 0 {
-		body = bytes.NewBuffer(bodyData)
-	}
-	req, err := http.NewRequest(r.Method, r.URL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-	copyHTTPHeaders(r.Header, req.Header)
-	return req, nil
+	copyHTTPHeaders(r.Header, copied.Header)
+	return copied, nil
 }
 
 func copyHTTPHeaders(src, dst http.Header) {
@@ -72,3 +70,12 @@ func copyHTTPHeaders(src, dst http.Header) {
 		}
 	}
 }
+
+// bodyData, err := ioutil.ReadAll(r.Body)
+// if err != nil {
+// 	return nil, err
+// }
+// var body io.Reader
+// if len(bodyData) > 0 {
+// 	body = bytes.NewBuffer(bodyData)
+// }
