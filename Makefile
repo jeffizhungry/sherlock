@@ -49,7 +49,7 @@ ctags:
 # Startup test http server
 .PHONY: http
 http:
-	go run ./examples/basic_http.go
+	go run ./developer/basic_http.go
 
 #--------------------------------------
 # Testing Rules
