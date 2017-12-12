@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"polymail-api/lib/utils"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -34,11 +36,11 @@ func NewTransparentProxy(p chan<- HTTPPayload) *TransparentProxy {
 
 // ServerHTTP handles proxying HTTP requests
 func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	// Drop non HTTP or HTTP requests
-	if r.URL.Scheme != "http" && r.URL.Scheme != "https" {
-		w.WriteHeader(500)
-		p.log.WithField("url", r.URL.String()).Warn("Dropping non-HTTP/HTTPS requests")
+	if (r.Host == "localhost:"+flagPort || r.Host == "127.0.0.1:"+flagPort) && r.URL.Path == "/" {
+		msg := `Proxy is alive and running!`
+		p.log.Info(msg)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(msg))
 		return
 	}
 
@@ -48,10 +50,12 @@ func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.log.WithError(err).Error("Failed to copy HTTP request")
 		return
 	}
+	// p.log.Debugf("Proxying request: %v", copiedReq.RequestURI)
 
 	// Make request
 	resp, err := p.client.Do(copiedReq)
 	if err != nil {
+		utils.PPrintln(r.URL, r.Header)
 		p.log.WithError(err).Error("Failed to run HTTP request")
 		return
 	}
@@ -76,7 +80,17 @@ func copyHTTPRequest(r *http.Request) (*http.Request, error) {
 		copiedBody = io.TeeReader(r.Body, &buf)
 		r.Body = ioutil.NopCloser(&buf)
 	}
-	copied, err := http.NewRequest(r.Method, r.URL.String(), copiedBody)
+	url := r.URL.String()
+	if r.URL.Scheme == "" && strings.HasPrefix(url, "//") {
+		if origin := r.Header.Get("Origin"); origin != "" {
+			originSchemeURL := strings.Split(origin, "://")
+			url = originSchemeURL[0] + ":" + url
+		} else {
+			// Default to HTTPS protocol. Should be good for most cases
+			url = "https:" + url
+		}
+	}
+	copied, err := http.NewRequest(r.Method, url, copiedBody)
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +101,17 @@ func copyHTTPRequest(r *http.Request) (*http.Request, error) {
 func copyHTTPResponse(resp *http.Response, w http.ResponseWriter) error {
 	copyHTTPHeaders(resp.Header, w.Header())
 	w.WriteHeader(resp.StatusCode)
-	if resp.ContentLength > 0 && resp.Body != nil {
+
+	if resp.ContentLength > 0 {
 		var buf bytes.Buffer
 		copiedBody := io.TeeReader(resp.Body, &buf)
 		resp.Body = ioutil.NopCloser(&buf)
 		_, err := io.Copy(w, copiedBody)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := io.Copy(w, resp.Body)
 		if err != nil {
 			return err
 		}
