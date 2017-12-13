@@ -36,9 +36,7 @@ clean:
 	rm -f $(APP)
 
 distclean:
-	rm -f $(APP)
-	rm -f $(CERTFILE)
-	rm -f $(KEYFILE)
+	rm -f $(APP) $(CERTFILE) $(KEYFILE) server.crt server.csr
 	rm -rf data
 
 #--------------------------------------
@@ -47,7 +45,7 @@ distclean:
 
 # Run app in foreground
 .PHONY: run
-run: $(APP) $(CERTFILE) $(KEYFILE)
+run: $(APP)
 	./$(APP)
 
 # Run in dev mode with fswatch to restart on file changes
@@ -66,10 +64,20 @@ http:
 	go run ./developer/basic_http.go
 
 # Generate self-signed key pair
+#
+# Resources:
 # https://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl
 .PHONY: keypair
 keypair:
-	openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 30 -subj "/C=US/ST=California/L=San Diego/O=Jeffs Hungry/OU=Ramen Joint/CN=localhost"
+	openssl genrsa -out $(KEYFILE) 2048
+	openssl rsa -in $(KEYFILE) -out $(KEYFILE)
+	# Create Certificate Signing Request
+	openssl req -sha256 -newkey -nodes -config ssl/openssl.cnf -key $(KEYFILE) -out server.csr
+	# Sign certificate with extensions
+	openssl x509 -req -sha256 -days 30 -in server.csr -signkey $(KEYFILE) -out server.crt -extensions v3_req -extfile ssl/openssl.cnf
+	cat server.crt $(KEYFILE) > $(CERTFILE)
+	# Clean up intermediate files
+	# rm server.crt server.csr
 
 #--------------------------------------
 # Testing Rules

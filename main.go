@@ -42,7 +42,7 @@ func main() {
 	server := NewTransparentProxy(payloads)
 
 	if flagSSL {
-		log.Fatal(http.ListenAndServeTLS(":"+flagPort, flagCertFile, flagKeyFile, server))
+		log.Fatal(http.ListenAndServeTLS("localhost:"+flagPort, flagCertFile, flagKeyFile, server))
 	}
-	log.Fatal(http.ListenAndServe(":"+flagPort, server))
+	log.Fatal(http.ListenAndServe("localhost:"+flagPort, server))
 }

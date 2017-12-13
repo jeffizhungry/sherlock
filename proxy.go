@@ -1,15 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"polymail-api/lib/utils"
 	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/jeffizhungry/sherlock/pkg/debug"
 )
 
 // HTTPPayload encapsulates a HTTP request and response pair
@@ -43,6 +46,53 @@ func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(msg))
 		return
 	}
+	p.log.Debugf("Proxying request: %v %v", r.Method, r.RequestURI)
+
+	// Hijack HTTP CONNECT tunnels
+	if r.Method == "CONNECT" {
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			p.log.Error("Server does not support hijacking")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		client, _, err := hj.Hijack()
+		if err != nil {
+			p.log.WithError(err).Error("Hijacking error")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer func() {
+			_ = client.Close()
+		}()
+
+		clientBuf := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
+		remote, err := net.Dial("tcp", r.URL.Host)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		remoteBuf := bufio.NewReadWriter(bufio.NewReader(remote), bufio.NewWriter(remote))
+		for {
+			req, err := http.ReadRequest(clientBuf.Reader)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			debug.PPrintln("HIJACKED: request: ", req.URL.String())
+			_ = req.Write(remoteBuf)
+			_ = remoteBuf.Flush()
+
+			resp, err := http.ReadResponse(remoteBuf.Reader, req)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			debug.PPrintln("HIJACKED: response: ", resp.Status)
+			_ = resp.Write(clientBuf.Writer)
+			_ = clientBuf.Flush()
+		}
+	}
 
 	// Copy Request
 	copiedReq, err := copyHTTPRequest(r)
@@ -50,7 +100,6 @@ func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.log.WithError(err).Error("Failed to copy HTTP request")
 		return
 	}
-	// p.log.Debugf("Proxying request: %v", copiedReq.RequestURI)
 
 	// Make request
 	resp, err := p.client.Do(copiedReq)
