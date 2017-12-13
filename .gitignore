@@ -16,3 +16,7 @@
 # Custom
 sherlock
 tags
+data
+
+key.pem
+cert.pem

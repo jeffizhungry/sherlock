@@ -12,6 +12,7 @@ import (
 
 var (
 	flagPort     string
+	flagSSLPort  string
 	flagSSL      bool
 	flagCertFile string
 	flagKeyFile  string
@@ -20,7 +21,8 @@ var (
 func init() {
 	logrus.SetLevel(logrus.DebugLevel)
 
-	flag.StringVar(&flagPort, "port", "9999", "Specify port number to run proxy service")
+	flag.StringVar(&flagPort, "port", "9090", "Specify port number to run HTTP proxy service")
+	flag.StringVar(&flagSSLPort, "sslport", "9091", "Specify port number to run HTTPS proxy service")
 	flag.BoolVar(&flagSSL, "ssl", false, "Serve as an HTTPS proxy")
 	flag.StringVar(&flagCertFile, "cert", "cert.pem", "Specify location of certificate")
 	flag.StringVar(&flagKeyFile, "key", "key.pem", "Specify location of private key")
@@ -28,7 +30,6 @@ func init() {
 }
 
 func main() {
-	fmt.Println("Sherlock starting. Listening on localhost:" + flagPort)
 	defer fmt.Println("Sherlock exiting...")
 
 	// Create channels
@@ -38,11 +39,12 @@ func main() {
 	sher := NewSherlock(payloads)
 	go sher.Run(context.TODO())
 
-	// Start Proxy
+	// Start HTTP and HTTPS Proxy
 	server := NewTransparentProxy(payloads)
-
-	if flagSSL {
-		log.Fatal(http.ListenAndServeTLS("localhost:"+flagPort, flagCertFile, flagKeyFile, server))
-	}
+	go func() {
+		fmt.Println("Sherlock HTTPS Proxy. Listening on localhost:" + flagSSLPort)
+		log.Fatal(http.ListenAndServeTLS("localhost:"+flagSSLPort, flagCertFile, flagKeyFile, server))
+	}()
+	fmt.Println("Sherlock HTTS Proxy. Listening on localhost:" + flagPort)
 	log.Fatal(http.ListenAndServe("localhost:"+flagPort, server))
 }
