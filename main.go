@@ -32,19 +32,23 @@ func init() {
 func main() {
 	defer fmt.Println("Sherlock exiting...")
 
+	ctx := context.Background()
+
 	// Create channels
 	payloads := make(chan HTTPPayload)
 
 	// Start Consumer
-	sher := NewSherlock(payloads)
-	go sher.Run(context.TODO())
+	sherlock := NewSherlock(payloads)
+	go sherlock.Run(ctx)
 
-	// Start HTTP and HTTPS Proxy
-	server := NewTransparentProxy(payloads)
-	go func() {
-		fmt.Println("Sherlock HTTPS Proxy. Listening on localhost:" + flagSSLPort)
-		log.Fatal(http.ListenAndServeTLS("localhost:"+flagSSLPort, flagCertFile, flagKeyFile, server))
-	}()
-	fmt.Println("Sherlock HTTS Proxy. Listening on localhost:" + flagPort)
+	// Start SSL proxy
+	go SSLProxy(ctx)
+
+	// server := NewTransparentProxy(payloads, "https")
+	// fmt.Println("Sherlock HTTPS Proxy. Listening on localhost:" + flagSSLPort)
+	// log.Fatal(http.ListenAndServeTLS("localhost:"+flagSSLPort, flagCertFile, flagKeyFile, server))
+
+	server := NewTransparentProxy(payloads, "http")
+	fmt.Println("Sherlock HTTP Proxy. Listening on localhost:" + flagPort)
 	log.Fatal(http.ListenAndServe("localhost:"+flagPort, server))
 }

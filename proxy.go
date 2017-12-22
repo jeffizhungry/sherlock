@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"polymail-api/lib/utils"
 	"strings"
 	"time"
 
@@ -29,9 +28,12 @@ type TransparentProxy struct {
 }
 
 // NewTransparentProxy creates a new TransparentProxy object.
-func NewTransparentProxy(p chan<- HTTPPayload) *TransparentProxy {
+func NewTransparentProxy(p chan<- HTTPPayload, tag string) *TransparentProxy {
+	if tag != "" {
+		tag = "." + tag
+	}
 	return &TransparentProxy{
-		log:     logrus.WithField("context", "proxy"),
+		log:     logrus.WithField("context", "proxy"+tag),
 		payload: p,
 		client:  &http.Client{Timeout: 30 * time.Second},
 	}
@@ -39,13 +41,13 @@ func NewTransparentProxy(p chan<- HTTPPayload) *TransparentProxy {
 
 // ServerHTTP handles proxying HTTP requests
 func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if (r.Host == "localhost:"+flagPort || r.Host == "127.0.0.1:"+flagPort) && r.URL.Path == "/" {
-		msg := `Proxy is alive and running!`
-		p.log.Info(msg)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(msg))
-		return
-	}
+	// if (r.Host == "localhost:"+flagPort || r.Host == "127.0.0.1:"+flagPort) && r.URL.Path == "/" {
+	// 	msg := `Proxy is alive and running!`
+	// 	p.log.Info(msg)
+	// 	w.WriteHeader(http.StatusOK)
+	// 	_, _ = w.Write([]byte(msg))
+	// 	return
+	// }
 	p.log.Debugf("Proxying request: %v %v", r.Method, r.RequestURI)
 
 	// Hijack HTTP CONNECT tunnels
@@ -104,7 +106,6 @@ func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Make request
 	resp, err := p.client.Do(copiedReq)
 	if err != nil {
-		utils.PPrintln(r.URL, r.Header)
 		p.log.WithError(err).Error("Failed to run HTTP request")
 		return
 	}
@@ -130,7 +131,9 @@ func copyHTTPRequest(r *http.Request) (*http.Request, error) {
 		r.Body = ioutil.NopCloser(&buf)
 	}
 	url := r.URL.String()
-	if r.URL.Scheme == "" && strings.HasPrefix(url, "//") {
+	if r.URL.Scheme == "" && r.URL.Host == "" {
+		url = "https://" + r.Host + r.URL.RawPath
+	} else if r.URL.Scheme == "" && strings.HasPrefix(url, "//") {
 		if origin := r.Header.Get("Origin"); origin != "" {
 			originSchemeURL := strings.Split(origin, "://")
 			url = originSchemeURL[0] + ":" + url

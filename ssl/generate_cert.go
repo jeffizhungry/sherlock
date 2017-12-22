@@ -115,7 +115,7 @@ func main() {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Acme Co"},
+			Organization: []string{"Sherlock"},
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,

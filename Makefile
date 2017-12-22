@@ -63,6 +63,11 @@ ctags:
 http:
 	go run ./developer/basic_http.go
 
+# Startup test https server
+.PHONY: https
+https:
+	go run ./developer/basic_https.go
+
 # Generate self-signed cert
 .PHONY: cert
 cert:

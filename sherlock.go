@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"polymail-api/lib/utils"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -41,7 +43,7 @@ func (s *Sherlock) Run(ctx context.Context) {
 }
 
 func (s *Sherlock) inspect(req *http.Request, resp *http.Response) error {
-	s.log.Debugf("Inspecting request: %v - %v", req.RequestURI, resp.StatusCode)
+	s.log.Debugf("Inspecting request: %v %v - %v", req.Method, req.RequestURI, resp.StatusCode)
 
 	// Ignore error cases for now
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -56,8 +58,6 @@ func (s *Sherlock) inspect(req *http.Request, resp *http.Response) error {
 		// debug.PPrintln("BAD CONTENT TYPE:", contentType)
 		return nil
 	}
-
-	// debug.PPrintln("About to inspect payload")
 
 	// Save
 	if err := savePayload(req, resp); err != nil {
@@ -76,11 +76,18 @@ func savePayload(req *http.Request, resp *http.Response) error {
 	}
 
 	// Copy payloads
-	if err := json.NewDecoder(req.Body).Decode(&call.RequestBody); err != nil && err != io.EOF {
+	requestPayload, _ := ioutil.ReadAll(req.Body)
+	utils.PPrintln("request: ", string(requestPayload))
+	if err := json.Unmarshal(requestPayload, &call.RequestBody); err != nil && err != io.EOF {
+		utils.PPrintln(req)
 		// Ignore non JSON requests
 		return nil
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&call.ResponseBody); err != nil && err != io.EOF {
+
+	responsePayload, _ := ioutil.ReadAll(resp.Body)
+	utils.PPrintln("reponse: ", string(responsePayload))
+	if err := json.Unmarshal(responsePayload, &call.ResponseBody); err != nil && err != io.EOF {
+		utils.PPrintln(req)
 		// Ignore non JSON responses
 		return nil
 	}
