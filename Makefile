@@ -36,7 +36,7 @@ clean:
 	rm -f $(APP)
 
 distclean:
-	rm -f $(APP) $(CERTFILE) $(KEYFILE)
+	rm -f $(APP)
 	rm -rf data
 
 #--------------------------------------
@@ -71,6 +71,7 @@ https:
 # Generate self-signed cert
 .PHONY: cert
 cert:
+	rm -f $(CERTFILE) $(KEYFILE)
 	go run ssl/generate_cert.go -ca
 
 #--------------------------------------
