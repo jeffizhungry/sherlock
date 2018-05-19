@@ -3,13 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
-	"regexp"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/elazarl/goproxy"
-	"github.com/jeffizhungry/sherlock/pkg/debug"
+	"github.com/jeffizhungry/sherlock/microapp"
+	"github.com/jeffizhungry/sherlock/pkg/rawhttp"
 )
 
 var (
@@ -31,53 +29,33 @@ func init() {
 	flag.Parse()
 }
 
-func orPanic(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func main() {
 	defer fmt.Println("Sherlock exiting...")
 
-	PrebuiltProxy()
-	// ctx := context.Background()
-	//
-	// // Create channels
-	// payloads := make(chan HTTPPayload)
-	//
-	// // Start Consumer
-	// sherlock := NewSherlock(payloads)
-	// go sherlock.Run(ctx)
-	//
-	// // Start SSL proxy
-	// go SSLProxy(ctx)
-	//
-	// // server := NewTransparentProxy(payloads, "https")
-	// // fmt.Println("Sherlock HTTPS Proxy. Listening on localhost:" + flagSSLPort)
-	// // log.Fatal(http.ListenAndServeTLS("localhost:"+flagSSLPort, flagCertFile, flagKeyFile, server))
-	//
-	// server := NewTransparentProxy(payloads, "http")
-	// fmt.Println("Sherlock HTTP Proxy. Listening on localhost:" + flagPort)
-	// log.Fatal(http.ListenAndServe("localhost:"+flagPort, server))
+	// Start test http server
+	go basicHTTP()
+
+	pairsc := make(chan rawhttp.Pair)
+
+	// Start proxy
+	go microapp.Proxy(flagPort, pairsc)
+
+	// Start accumulator
+	microapp.Accumulator(pairsc)
+
+	// for p := range sub {
+	// 	fmt.Println("Request:  ", p.Request.Method+" "+p.Request.URL.String())
+	// 	fmt.Println("Response: ", p.Response.Status)
+	// }
 }
 
-func PrebuiltProxy() {
-	proxy := goproxy.NewProxyHttpServer()
-	proxy.Verbose = true
+func basicHTTPHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "{\n  \"code\": 200,\n  \"description\": \"Hello World\"\n}")
+}
 
-	r := proxy.OnRequest(goproxy.ReqHostMatches(regexp.MustCompile("^.*$")))
-	r.HandleConnect(goproxy.AlwaysMitm)
-	r.DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-		debug.Println("REQUEST:  " + req.Method + " " + req.URL.Path)
-		resp, err := ctx.RoundTrip(req)
-		if err != nil {
-			panic(err)
-		}
-		debug.Println("RESPONSE: " + resp.Status)
-		return req, resp
-	})
-
-	fmt.Println("HTTP Proxy. Listening on localhost:" + flagPort)
-	log.Fatal(http.ListenAndServe("localhost:"+flagPort, proxy))
+func basicHTTP() {
+	http.HandleFunc("/", basicHTTPHandler)
+	fmt.Println("Starting Basic HTTP Server. Listening on localhost:8080")
+	defer fmt.Println("Basic HTTP Server exiting...")
+	_ = http.ListenAndServe(":8080", nil)
 }

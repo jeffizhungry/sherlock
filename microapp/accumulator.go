@@ -1,4 +1,4 @@
-package main
+package microapp
 
 import (
 	"fmt"
@@ -24,17 +24,17 @@ func Accumulator(pairs <-chan rawhttp.Pair) {
 		r := p.Request.Method + " " + p.Request.URL.String()
 		fmt.Println("Received Raw HTTP Pair: ", r)
 
-		// Skip non json requests
-		if p.Request.Header.Get("Content-Type") != "application/json" {
-			log.WithFields(logrus.Fields{
-				"route": r,
-			}).Debug("Dropping request due to Content-Type")
-			continue
-		}
+		// // Skip non json requests
+		// if p.Request.Header.Get("Content-Type") != "application/json" {
+		// 	log.WithFields(logrus.Fields{
+		// 		"route": r,
+		// 	}).Debug("Content-Type is not application/json. Dropping request.")
+		// 	continue
+		// }
 
-		// Parse HTTP request, skip if it's not empty and invalid
+		// // Parse HTTP request, skip if it's not empty and invalid
 
-		// Parse HTTP response, skip if it's not empty and invalid
+		// // Parse HTTP response, skip if it's not empty and invalid
 
 		// Save
 		if err := savePair(p); err != nil {
