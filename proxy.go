@@ -67,6 +67,7 @@ func (p *TransparentProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			_ = client.Close()
 		}()
+		_, _ = client.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
 
 		clientBuf := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
 		remote, err := net.Dial("tcp", r.URL.Host)

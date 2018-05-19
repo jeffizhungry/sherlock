@@ -13,7 +13,6 @@ func AssertStructEqual(t *testing.T, expected, actual interface{}, msg string) b
 
 	// NOTE(Jeff): reflect.DeepEqual has issues with time.Time comparisons as of Go 1.9
 	if !assert.True(t, reflect.DeepEqual(expected, actual), msg) {
-		t.Logf("----- %v -----", msg)
 		printExpectedActual(expected, actual)
 		return false
 	}

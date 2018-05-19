@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"polymail-api/lib/utils"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -77,17 +76,17 @@ func savePayload(req *http.Request, resp *http.Response) error {
 
 	// Copy payloads
 	requestPayload, _ := ioutil.ReadAll(req.Body)
-	utils.PPrintln("request: ", string(requestPayload))
+	debug.PPrintln("request: ", string(requestPayload))
 	if err := json.Unmarshal(requestPayload, &call.RequestBody); err != nil && err != io.EOF {
-		utils.PPrintln(req)
+		debug.PPrintln(req)
 		// Ignore non JSON requests
 		return nil
 	}
 
 	responsePayload, _ := ioutil.ReadAll(resp.Body)
-	utils.PPrintln("reponse: ", string(responsePayload))
+	debug.PPrintln("reponse: ", string(responsePayload))
 	if err := json.Unmarshal(responsePayload, &call.ResponseBody); err != nil && err != io.EOF {
-		utils.PPrintln(req)
+		debug.PPrintln(req)
 		// Ignore non JSON responses
 		return nil
 	}

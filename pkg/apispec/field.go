@@ -15,13 +15,16 @@ type Field struct {
 	Optional bool
 }
 
-// DetermineFields determines fields spec for a given JSON payload
-func DetermineFields(s string) []*Field {
+// DeterminePayloadSpec determines fields spec for a given JSON payload
+func DeterminePayloadSpec(s string) *Field {
 	var m map[string]interface{}
 	if err := json.Unmarshal([]byte(s), &m); err != nil {
 		panic(err)
 	}
-	return mapToFields(m)
+	return &Field{
+		Type:   BasicTypeObject,
+		Nested: mapToFields(m),
+	}
 }
 
 func mapToFields(m map[string]interface{}) []*Field {
@@ -43,6 +46,13 @@ func sliceToField(s []interface{}) *Field {
 		return valToField(e)
 	}
 	return &Field{}
+}
+
+func mergeFields(old, new *Field) *Field {
+	if new.Type != BasicTypeObject {
+		return new
+	}
+	return nil
 }
 
 func valToField(v interface{}) *Field {

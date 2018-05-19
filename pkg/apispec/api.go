@@ -9,12 +9,12 @@ type Service struct {
 
 // Route stores information about an API Route.
 type Route struct {
-	Method      string
-	Path        string
-	Headers     []*Header
-	URLParams   []*URLParam
-	QueryParams []*QueryParam
-	Payload     []*Field
+	Method      string        // HTTP Method [GET, POST, PATCH, DELETE]
+	Path        string        // route path
+	Headers     []*Header     // HTTP headers
+	URLParams   []*URLParam   // URL parameters withing the route path
+	QueryParams []*QueryParam // HTTP query parameters
+	Payload     []*Field      // HTTP request body fields
 }
 
 func (r Route) String() string {
