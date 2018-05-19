@@ -8,7 +8,7 @@ import (
 // Set so we can stub out for unittests.
 var seeder = rand.Reader
 
-// Alphanumeric generator. Ensures all values are A-Z, a-z, or 0-9.
+// Alphanumeric generates a random string, ensuring all values are A-Z, a-z, or 0-9.
 func Alphanumeric(length int) string {
 	if length <= 0 {
 		return ""
@@ -17,7 +17,7 @@ func Alphanumeric(length int) string {
 	return genString(chars, length)
 }
 
-// AlphanumericLowercase generator. Ensures all values are a-z or 0-9.
+// AlphanumericLowercase generates a random string, ensuring all values are a-z or 0-9.
 func AlphanumericLowercase(length int) string {
 	if length <= 0 {
 		return ""
@@ -26,8 +26,8 @@ func AlphanumericLowercase(length int) string {
 	return genString(chars, length)
 }
 
-// SafeAlphanumeric generator. Ensures all values are A-Z (except for I, L, O) and 2-9.
-// Does not return lowercase.
+// SafeAlphanumeric generates a random string, ensuring all values are A-Z
+// (except for I, L, O) and 2-9.
 func SafeAlphanumeric(length int) string {
 	if length <= 0 {
 		return ""
