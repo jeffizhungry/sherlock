@@ -13,7 +13,7 @@ type ProxyCtx struct {
 	// Will contain the remote server's response (if available. nil if the request wasn't send yet)
 	Resp         *http.Response
 	RoundTripper RoundTripper
-	// will contain the recent error that occured while trying to send receive or parse traffic
+	// will contain the recent error that occurred while trying to send receive or parse traffic
 	Error error
 	// A handle for the user to keep data in the context, from the call of ReqHandler to the
 	// call of RespHandler
@@ -47,10 +47,10 @@ func (ctx *ProxyCtx) printf(msg string, argv ...interface{}) {
 // Logf prints a message to the proxy's log. Should be used in a ProxyHttpServer's filter
 // This message will be printed only if the Verbose field of the ProxyHttpServer is set to true
 //
-//	proxy.OnRequest().DoFunc(func(r *http.Request,ctx *goproxy.ProxyCtx) *http.Request{
+//	proxy.OnRequest().DoFunc(func(r *http.Request,ctx *goproxy.ProxyCtx) (*http.Request, *http.Response){
 //		nr := atomic.AddInt32(&counter,1)
 //		ctx.Printf("So far %d requests",nr)
-//		return r
+//		return r, nil
 //	})
 func (ctx *ProxyCtx) Logf(msg string, argv ...interface{}) {
 	if ctx.proxy.Verbose {
@@ -61,13 +61,13 @@ func (ctx *ProxyCtx) Logf(msg string, argv ...interface{}) {
 // Warnf prints a message to the proxy's log. Should be used in a ProxyHttpServer's filter
 // This message will always be printed.
 //
-//	proxy.OnRequest().DoFunc(func(r *http.Request,ctx *goproxy.ProxyCtx) *http.Request{
+//	proxy.OnRequest().DoFunc(func(r *http.Request,ctx *goproxy.ProxyCtx) (*http.Request, *http.Response){
 //		f,err := os.OpenFile(cachedContent)
 //		if err != nil {
 //			ctx.Warnf("error open file %v: %v",cachedContent,err)
-//			return r
+//			return r, nil
 //		}
-//		return r
+//		return r, nil
 //	})
 func (ctx *ProxyCtx) Warnf(msg string, argv ...interface{}) {
 	ctx.printf("WARN: "+msg, argv...)

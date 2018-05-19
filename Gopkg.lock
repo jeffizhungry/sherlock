@@ -14,10 +14,11 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/elazarl/goproxy"
   packages = ["."]
-  revision = "0a5b8bdb09049ae4ae68e75437ded0b7a2e324e3"
-  version = "v1.0"
+  revision = "a96fa3a318260eab29abaf32f7128c9eb07fb073"
+  source = "github.com/elazarl/goproxy"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -52,6 +53,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "13a8d15e00555bb338e6c7efb0738af77459ee9d100178a118820a50776a3fbf"
+  inputs-digest = "67f8efd4f854975247cbd6bb8a7b25c235e8547cc3f755d08740c6aff9914e9a"
   solver-name = "gps-cdcl"
   solver-version = 1
